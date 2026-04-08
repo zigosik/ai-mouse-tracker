@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head><title>AI Tracker</title></head>
+<body>
+    <h1>AI Doporučovač</h1>
+    <input type="text" id="hledani" placeholder="Co hledáte?">
+    <button onclick="odeslat()">Získat tipy</button>
+    <div id="vysledek" style="margin-top: 20px; white-space: pre-wrap;"></div>
+
+    <script>
+        async function odeslat() {
+            const text = document.getElementById('hledani').value;
+            const div = document.getElementById('vysledek');
+            div.innerText = "AI přemýšlí...";
+            const res = await fetch('/analyze', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({search: text})
+            });
+            const data = await res.json();
+            div.innerText = data.odpoved;
+        }
+    </script>
+</body>
+</html>

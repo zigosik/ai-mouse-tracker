@@ -4,7 +4,6 @@ from openai import OpenAI
 
 app = Flask(__name__)
 
-# Nastavení AI klienta z proměnných prostředí
 client = OpenAI(
     api_key=os.getenv("OPENAI_API_KEY"),
     base_url=os.getenv("OPENAI_BASE_URL")
@@ -16,24 +15,12 @@ def index():
 
 @app.route('/analyze', methods=['POST'])
 def analyze():
-    data = request.json
-    mouse_points = data.get('mouse_data', [])
-    
-    # Příprava dat pro AI - uděláme ze souřadnic textový popis
-    pohyb_popis = ", ".join([f"[{p['x']},{p['y']}]" for p in mouse_points[:20]])
-
-    prompt = f"""
-    Uživatel se právě pohyboval myší po obrazovce. Tady je vzorek jeho souřadnic: {pohyb_popis}.
-    Zkus z toho odhadnout jeho náladu nebo co právě na webu hledá. 
-    Odpovídej vtipně, stručně a česky.
-    """
+    # AI simulujeme, že "vidí" náhodný obrázek
+    prompt = "Uživatel právě najel myší na náhodný obrázek z internetu. Vymysli si jeden konkrétní, vtipný a krátký komentář k tomu, co by na tom obrázku mohlo být (např. o tlusté kočce, divném mraku nebo starém kole). Buď kreativní a stručný."
 
     response = client.chat.completions.create(
         model="gemma3:27b",
-        messages=[
-            {"role": "system", "content": "Jsi expert na psychologii pohybu myši."},
-            {"role": "user", "content": prompt}
-        ]
+        messages=[{"role": "user", "content": prompt}]
     )
     
     return jsonify({"odpoved": response.choices[0].message.content})

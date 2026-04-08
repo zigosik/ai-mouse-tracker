@@ -1,46 +1,46 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>AI Mouse Tracker</title>
+    <title>AI Image Explorer</title>
     <style>
-        body { font-family: sans-serif; padding: 20px; }
-        #vysledek { background: #f0f0f0; padding: 15px; border-radius: 8px; margin-top: 20px; }
+        body { font-family: 'Segoe UI', sans-serif; text-align: center; background: #f0f2f5; padding-top: 50px; }
+        .container { max-width: 600px; margin: auto; background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        #target-img { width: 100%; border-radius: 10px; cursor: help; border: 3px solid transparent; transition: 0.3s; }
+        #target-img:hover { border-color: #007bff; transform: scale(1.02); }
+        button { margin-top: 20px; padding: 10px 20px; font-size: 16px; cursor: pointer; background: #007bff; color: white; border: none; border-radius: 5px; }
+        #ai-bubble { margin-top: 20px; padding: 15px; font-style: italic; color: #333; min-height: 50px; border-left: 5px solid #007bff; background: #e9f5ff; }
     </style>
 </head>
 <body>
-    <h1>AI Doporučovač (Sledování myši)</h1>
-    <p>Jen hýbej myší po stránce. Každých 10 sekund se AI zeptá, co si o tvém pohybu myslí.</p>
-    
-    <div id="vysledek">Čekám na první pohyby...</div>
+    <div class="container">
+        <h1>Co si AI myslí o obrázku?</h1>
+        <img id="target-img" src="https://picsum.photos/600/400" alt="Random Image">
+        <br>
+        <button onclick="nextImage()">Načíst další obrázek</button>
+        <div id="ai-bubble">Najjeď myší na obrázek a uvidíš...</div>
+    </div>
 
     <script>
-        let mouseData = [];
+        const img = document.getElementById('target-img');
+        const bubble = document.getElementById('ai-bubble');
 
-        // Sleduje pohyb myši
-        document.onmousemove = (e) => {
-            mouseData.push({x: e.clientX, y: e.clientY, t: Date.now()});
-            if (mouseData.length > 50) mouseData.shift(); // Držíme jen posledních 50 bodů
-        };
+        // Funkce pro změnu obrázku
+        function nextImage() {
+            img.src = "https://picsum.photos/600/400?t=" + new Date().getTime();
+            bubble.innerText = "Nový obrázek načten. Zkus na něj najet!";
+        }
 
-        async function analyzujPohyb() {
-            const div = document.getElementById('vysledek');
-            if (mouseData.length < 10) return;
-
+        // Detekce najetí myši
+        img.onmouseenter = async () => {
+            bubble.innerText = "AI přemýšlí...";
             const res = await fetch('/analyze', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({
-                    search: "pohyb myši po obrazovce",
-                    mouse_data: mouseData 
-                })
+                body: JSON.stringify({ action: 'hover' })
             });
             const data = await res.json();
-            div.innerHTML = "<b>AI analýza tvého pohybu:</b><br>" + data.odpoved;
-            mouseData = []; // Vyčistíme data pro další várku
-        }
-
-        // Automaticky analyzuje každých 10 sekund
-        setInterval(analyzujPohyb, 10000);
+            bubble.innerText = data.odpoved;
+        };
     </script>
 </body>
 </html>

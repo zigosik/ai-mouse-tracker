@@ -1,25 +1,46 @@
 <!DOCTYPE html>
 <html>
-<head><title>AI Tracker</title></head>
+<head>
+    <title>AI Mouse Tracker</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; }
+        #vysledek { background: #f0f0f0; padding: 15px; border-radius: 8px; margin-top: 20px; }
+    </style>
+</head>
 <body>
-    <h1>AI Doporučovač</h1>
-    <input type="text" id="hledani" placeholder="Co hledáte?">
-    <button onclick="odeslat()">Získat tipy</button>
-    <div id="vysledek" style="margin-top: 20px; white-space: pre-wrap;"></div>
+    <h1>AI Doporučovač (Sledování myši)</h1>
+    <p>Jen hýbej myší po stránce. Každých 10 sekund se AI zeptá, co si o tvém pohybu myslí.</p>
+    
+    <div id="vysledek">Čekám na první pohyby...</div>
 
     <script>
-        async function odeslat() {
-            const text = document.getElementById('hledani').value;
+        let mouseData = [];
+
+        // Sleduje pohyb myši
+        document.onmousemove = (e) => {
+            mouseData.push({x: e.clientX, y: e.clientY, t: Date.now()});
+            if (mouseData.length > 50) mouseData.shift(); // Držíme jen posledních 50 bodů
+        };
+
+        async function analyzujPohyb() {
             const div = document.getElementById('vysledek');
-            div.innerText = "AI přemýšlí...";
+            if (mouseData.length < 10) return;
+
             const res = await fetch('/analyze', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({search: text})
+                body: JSON.stringify({
+                    search: "pohyb myši po obrazovce",
+                    mouse_data: mouseData 
+                })
             });
             const data = await res.json();
-            div.innerText = data.odpoved;
+            div.innerHTML = "<b>AI analýza tvého pohybu:</b><br>" + data.odpoved;
+            mouseData = []; // Vyčistíme data pro další várku
         }
+
+        // Automaticky analyzuje každých 10 sekund
+        setInterval(analyzujPohyb, 10000);
     </script>
 </body>
 </html>

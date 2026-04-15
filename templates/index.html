@@ -1,46 +1,67 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>AI Image Explorer</title>
+    <title>AI Hardware Shop</title>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; text-align: center; background: #f0f2f5; padding-top: 50px; }
-        .container { max-width: 600px; margin: auto; background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-        #target-img { width: 100%; border-radius: 10px; cursor: help; border: 3px solid transparent; transition: 0.3s; }
-        #target-img:hover { border-color: #007bff; transform: scale(1.02); }
-        button { margin-top: 20px; padding: 10px 20px; font-size: 16px; cursor: pointer; background: #007bff; color: white; border: none; border-radius: 5px; }
-        #ai-bubble { margin-top: 20px; padding: 15px; font-style: italic; color: #333; min-height: 50px; border-left: 5px solid #007bff; background: #e9f5ff; }
+        body { font-family: sans-serif; background: #f0f0f0; display: flex; flex-wrap: wrap; justify-content: center; gap: 20px; padding: 20px; }
+        .karta { background: white; width: 280px; padding: 15px; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); text-align: center; }
+        .foto { width: 100%; height: 180px; background: #eee; border-radius: 10px; object-fit: cover; cursor: pointer; }
+        .info { text-align: left; font-size: 0.85em; margin-top: 10px; background: #f9f9f9; padding: 10px; border-radius: 5px; display: none; }
+        .tlacitka { display: flex; justify-content: space-between; margin-top: 10px; }
+        button { padding: 5px 10px; cursor: pointer; border: none; border-radius: 4px; background: #007bff; color: white; font-weight: bold; }
+        button.levne { background: #dc3545; }
+        h3 { margin: 10px 0; font-size: 1.1em; }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>Co si AI myslí o obrázku?</h1>
-        <img id="target-img" src="https://picsum.photos/600/400" alt="Random Image">
-        <br>
-        <button onclick="nextImage()">Načíst další obrázek</button>
-        <div id="ai-bubble">Najjeď myší na obrázek a uvidíš...</div>
-    </div>
 
-    <script>
-        const img = document.getElementById('target-img');
-        const bubble = document.getElementById('ai-bubble');
+<script>
+    const sekce = ['Mobil', 'PC', 'Laptop', 'Tablet'];
 
-        // Funkce pro změnu obrázku
-        function nextImage() {
-            img.src = "https://picsum.photos/600/400?t=" + new Date().getTime();
-            bubble.innerText = "Nový obrázek načten. Zkus na něj najet!";
-        }
+    async function akce(kat, smer) {
+        const nadpis = document.getElementById('n-' + kat);
+        const textInfo = document.getElementById('i-' + kat);
+        const puvodniModel = nadpis.innerText;
+        
+        nadpis.innerText = "Hledám...";
+        
+        const res = await fetch('/get_product', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ kategorie: kat, smer: smer, aktualni: puvodniModel })
+        });
+        
+        const data = await res.json();
+        // Rozsekáme odpověď od AI
+        const radek = data.vysledek.split('\n');
+        const nazev = radek[0].replace('NÁZEV:', '').trim();
+        const param = radek[1].trim();
+        const link = radek[2].replace('ODKAZ:', '').trim();
 
-        // Detekce najetí myši
-        img.onmouseenter = async () => {
-            bubble.innerText = "AI přemýšlí...";
-            const res = await fetch('/analyze', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ action: 'hover' })
-            });
-            const data = await res.json();
-            bubble.innerText = data.odpoved;
-        };
-    </script>
+        nadpis.innerText = nazev;
+        textInfo.innerHTML = `<b>${param}</b><br><br><a href="${link}" target="_blank">Zobrazit v obchodě</a>`;
+        document.getElementById('img-' + kat).src = `https://picsum.photos/seed/${nazev}/300/200`;
+    }
+
+    function ukazInfo(kat) {
+        document.getElementById('i-' + kat).style.display = 'block';
+    }
+
+    // Vygeneruje 4 karty
+    sekce.forEach(s => {
+        document.write(`
+            <div class="karta">
+                <img id="img-${s}" class="foto" src="https://picsum.photos/seed/${s}/300/200" onmouseenter="ukazInfo('${s}')">
+                <h3 id="n-${s}">${s}</h3>
+                <div id="i-${s}" class="info">Najjeď myší pro parametry</div>
+                <div class="tlacitka">
+                    <button class="levne" onclick="akce('${s}', 'levnější model')">€ - Dolů</button>
+                    <button onclick="akce('${s}', 'dražší a výkonnější model')">€ - Nahoru</button>
+                </div>
+            </div>
+        `);
+    });
+</script>
+
 </body>
 </html>

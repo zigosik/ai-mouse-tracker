@@ -13,17 +13,27 @@ client = OpenAI(
 def index():
     return render_template('index.html')
 
-@app.route('/analyze', methods=['POST'])
-def analyze():
-    # AI simulujeme, že "vidí" náhodný obrázek
-    prompt = "Uživatel právě najel myší na náhodný obrázek z internetu. Vymysli si jeden konkrétní, vtipný a krátký komentář k tomu, co by na tom obrázku mohlo být (např. o tlusté kočce, divném mraku nebo starém kole). Buď kreativní a stručný."
+@app.route('/get_product', methods=['POST'])
+def get_product():
+    data = request.json
+    kategorie = data.get('kategorie')
+    smer = data.get('smer') # 'levnejsi' nebo 'drazsi'
+    aktualni = data.get('aktualni', 'běžný model')
+
+    # AI vybere konkrétní produkt a popíše ho
+    prompt = f"""Uživatel prohlíží {kategorie}. Teď má vybraný model "{aktualni}". 
+    Najdi jeden konkrétní existující model, který je {smer}.
+    Odpověz PŘESNĚ v tomto formátu (nic jiného nepiš):
+    NÁZEV: [Název produktu]
+    PARAMETRY: [3 hlavní parametry]
+    ODKAZ: https://www.heureka.cz/"""
 
     response = client.chat.completions.create(
         model="gemma3:27b",
         messages=[{"role": "user", "content": prompt}]
     )
     
-    return jsonify({"odpoved": response.choices[0].message.content})
+    return jsonify({"vysledek": response.choices[0].message.content})
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
